@@ -39,32 +39,11 @@ jobs:
 
       - name: Build Android APK
         run: |
-          # Автоматичне підтвердження ліцензій SDK
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
-          
-          # Фіксація стабільних версій Capacitor
           npm init -y
           npm install @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6
-          
-          # Ініціалізація та збірка
           npx cap init "Розклад" "com.schedule.app" --web-dir public
-          npx cap add android
-          npx cap sync android
-          
-          cd android
-          chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon -Dorg.gradle.jvmargs="-Xmx2048m"
-
-      - name: Upload APK Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: Schedule-MIUI-14.apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
-      - name: Build Android APK
-        run: |
-          npm init -y
-          npm install @capacitor/core @capacitor/cli @capacitor/android
-          npx cap init "Розклад" "com.schedule.app" --web-dir public
+          rm -rf android
           npx cap add android
           npx cap sync android
           cd android
@@ -74,37 +53,5 @@ jobs:
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Schedule-MIUI-14.apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
-      - name: Build Android APK
-        run: |
-          npm init -y
-          npm install @capacitor/core@latest @capacitor/cli@latest @capacitor/android@latest
-          npx cap init "Розклад" "com.schedule.app" --web-dir public
-          npx cap add android
-          npx cap sync android
-          cd android
-          chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
-
-      - name: Upload APK Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: Schedule-MIUI-14.apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
-      - name: Build Android APK
-        run: |
-          npm init -y
-          npm install @capacitor/core @capacitor/cli @capacitor/android
-          npx cap init "Розклад" "com.schedule.app" --web-dir public
-          npx cap add android
-          npx cap sync android
-          cd android
-          chmod +x gradlew
-          ./gradlew assembleDebug
-
-      - name: Upload APK Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: Schedule-MIUI-14.apk
+          name: Розклад-MIUI-14.apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
