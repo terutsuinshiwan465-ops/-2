@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Розклад</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    :root {
+      --bg: #0f1115;
+      --card: #171a20;
+      --card2: #1c2027;
+      --border: #292e37;
+      --text: #f1f3f5;
+      --muted: #858c98;
+      --accent: #6ea8fe;
+      --accent-bg: #1b2a40;
+    }
+
+    body {
+      margin: 0;
+      padding: 14px;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .app {
+      max-width: 600px;
+      margin: auto;
+    }
+
+    /* Статус */
+
+    .status {
+      margin-bottom: 14px;
+      padding: 16px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+
+    .status-label {
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+
+    .status-main {
+      font-size: 17px;
+      font-weight: 600;
+      line-height: 1.35;
+    }
+
+    .status-timer {
+      margin-top: 8px;
+      color: var(--accent);
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    /* Розклад */
+
+    .schedule {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .header {
+      height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .day {
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: .4px;
+      text-align: center;
+      flex: 1;
+    }
+
+    .day small {
+      display: block;
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 400;
+    }
+
+    .nav {
+      width: 38px;
+      height: 38px;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 22px;
+      cursor: pointer;
+    }
+
+    .nav:active {
+      background: var(--card2);
+      color: var(--text);
+    }
+
+    /* Пари */
+
+    .lesson {
+      display: flex;
+      min-height: 62px;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+
+    .lesson:last-child {
+      border-bottom: none;
+    }
+
+    .time {
+      width: 91px;
+      padding: 14px 8px 14px 14px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
+      flex-shrink: 0;
+    }
+
+    .lesson-info {
+      flex: 1;
+      padding: 13px 14px 13px 6px;
+      display: flex;
+      align-items: center;
+    }
+
+    .lesson-name {
+      font-size: 14px;
+      line-height: 1.35;
+    }
+
+    /* Поточна пара */
+
+    .lesson.active {
+      background: var(--accent-bg);
+    }
+
+    .lesson.active::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: var(--accent);
+    }
+
+    .lesson.active .time {
+      color: var(--accent);
+    }
+
+    .lesson.active .lesson-name {
+      color: #fff;
+      font-weight: 600;
+    }
+
+    /* Порожній день */
+
+    .empty {
+      padding: 35px 15px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    /* Мобільний екран */
+
+    @media (max-width: 400px) {
+      body {
+        padding: 10px;
+      }
+
+      .time {
+        width: 82px;
+        padding-left: 10px;
+        font-size: 11px;
+      }
+
+      .lesson-info {
+        padding-right: 10px;
+      }
+
+      .lesson-name {
+        font-size: 13px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="app">
+
+  <div class="status">
+    <div class="status-label" id="status-label">Статус</div>
+    <div class="status-main" id="current-status">Завантаження...</div>
+    <div class="status-timer" id="timer-status">--:--</div>
+  </div>
+
+  <div class="schedule">
+
+    <div class="header">
+      <button class="nav" onclick="changeDay(-1)">‹</button>
+
+      <div class="day" id="day-display"></div>
+
+      <button class="nav" onclick="changeDay(1)">›</button>
+    </div>
+
+    <div id="schedule-list"></div>
+
+  </div>
+
+</div>
+
+
+<script>
+
+const days = [
+  "ПОНЕДІЛОК",
+  "ВІВТОРОК",
+  "СЕРЕДА",
+  "ЧЕТВЕР",
+  "П'ЯТНИЦЯ",
+  "СУБОТА",
+  "НЕДІЛЯ"
+];
+
+const scheduleData = {
+
+  0: [
+    { time: "09:40–10:25", name: "Укр. література · Углицький О.В. · 38" },
+    { time: "10:30–11:15", name: "Укр. література · Углицький О.В. · 38" },
+    { time: "11:25–12:10", name: "БІГ-БЕНД · ВЗ" },
+    { time: "12:15–13:00", name: "БІГ-БЕНД · ВЗ" },
+    { time: "13:10–13:55", name: "БІГ-БЕНД · ВЗ" },
+    { time: "14:00–14:45", name: "Виховна година" }
+  ],
+
+  1: [
+    { time: "08:00–08:45", name: "Громад. осв. / Мистецтво · Сліпченко · 40" },
+    { time: "08:50–09:35", name: "Громад. осв. / Мистецтво · Сліпченко · 40" },
+    { time: "09:40–10:25", name: "Всесвітня історія · Сліпченко · 40" },
+    { time: "10:30–11:15", name: "Всесвітня історія · Сліпченко · 40" },
+    { time: "11:25–12:10", name: "Сольфеджіо I · Масловська · 36" },
+    { time: "12:15–13:00", name: "Сольфеджіо I · Масловська · 36" },
+    { time: "13:10–13:55", name: "Муз. література · Зіненко · 49" },
+    { time: "14:00–14:45", name: "Муз. література · Зіненко · 49" }
+  ],
+
+  2: [
+    { time: "09:40–10:25", name: "Українська мова · Углицький О.В. · 38" },
+    { time: "10:30–11:15", name: "Українська мова · Углицький О.В. · 38" },
+    { time: "13:10–13:55", name: "Англійська мова · Мирошниченко · 37" },
+    { time: "14:00–14:45", name: "Англійська мова · Мирошниченко · 37" }
+  ],
+
+  3: [
+    { time: "13:10–13:55", name: "Захист України · Мясоєдова-Федько · 40" },
+    { time: "14:00–14:45", name: "Захист України · Мясоєдова-Федько · 40" },
+    { time: "14:55–15:40", name: "Фізична культура · Ємельянцева · МЗ" },
+    { time: "15:45–16:30", name: "Фізична культура · Ємельянцева · МЗ" },
+    { time: "16:40–17:25", name: "Математика · Роговська О.М. · 38" },
+    { time: "17:30–18:15", name: "Математика · Роговська О.М. · 38" }
+  ],
+
+  4: [
+    { time: "09:40–10:25", name: "Теорія музики I · Масловська · 41" },
+    { time: "10:30–11:15", name: "Теорія музики I · Масловська · 41" },
+    { time: "11:25–12:10", name: "БІГ-БЕНД · 31" },
+    { time: "12:15–13:00", name: "БІГ-БЕНД · 31" },
+    { time: "13:10–13:55", name: "БІГ-БЕНД · 31" },
+    { time: "14:55–15:40", name: "Теорія музики II · Масловська · 41" },
+    { time: "15:45–16:30", name: "Теорія музики II · Масловська · 41" }
+  ],
+
+  5: [
+    { time: "09:40–10:25", name: "Математика · Роговська О.М. · 38" },
+    { time: "10:30–11:15", name: "Математика · Роговська О.М. · 38" },
+    { time: "11:25–12:10", name: "Фізична культура · Ємельянцева · МЗ" },
+    { time: "12:15–13:00", name: "Фізична культура · Ємельянцева · МЗ" },
+    { time: "13:10–13:55", name: "Сольфеджіо II · Масловська · 36" },
+    { time: "14:00–14:45", name: "Сольфеджіо II · Масловська · 36" }
+  ],
+
+  6: []
+};
+
+
+const now = new Date();
+
+let realDayIndex =
+  now.getDay() === 0
+    ? 6
+    : now.getDay() - 1;
+
+let selectedDayIndex = realDayIndex;
+
+
+/* Після 19:00 показуємо завтра */
+
+if (now.getHours() >= 19) {
+  selectedDayIndex =
+    (realDayIndex + 1) % 7;
+}
+
+
+function parseTime(timeStr) {
+
+  const [h, m] =
+    timeStr.split(":").map(Number);
+
+  const d = new Date();
+
+  return new Date(
+    d.getFullYear(),
+    d.getMonth(),
+    d.getDate(),
+    h,
+    m,
+    0
+  );
+}
+
+
+function formatTimer(ms) {
+
+  if (ms < 0) ms = 0;
+
+  const seconds =
+    Math.floor(ms / 1000);
+
+  const minutes =
+    Math.floor(seconds / 60);
+
+  const sec =
+    seconds % 60;
+
+  if (minutes >= 60) {
+
+    const hours =
+      Math.floor(minutes / 60);
+
+    const min =
+      minutes % 60;
+
+    return `${hours} год ${String(min).padStart(2,"0")} хв`;
+
+  }
+
+  return `${minutes} хв ${String(sec).padStart(2,"0")} сек`;
+}
+
+
+function updateLiveStatus() {
+
+  const currentNow = new Date();
+
+  const currentDay =
+    currentNow.getDay() === 0
+      ? 6
+      : currentNow.getDay() - 1;
+
+  const lessons =
+    scheduleData[currentDay] || [];
+
+  let currentLesson = null;
+  let nextLesson = null;
+
+  for (let i = 0; i < lessons.length; i++) {
+
+    const [startStr, endStr] =
+      lessons[i].time.replace("–", "-").split("-");
+
+    const start = parseTime(startStr);
+    const end = parseTime(endStr);
+
+    if (
+      currentNow >= start &&
+      currentNow <= end
+    ) {
+
+      currentLesson = {
+        ...lessons[i],
+        endTime: end
+      };
+
+      break;
+    }
+
+    if (currentNow < start) {
+
+      nextLesson = {
+        ...lessons[i],
+        startTime: start
+      };
+
+      break;
+    }
+  }
+
+
+  const label =
+    document.getElementById("status-label");
+
+  const status =
+    document.getElementById("current-status");
+
+  const timer =
+    document.getElementById("timer-status");
+
+
+  if (currentLesson) {
+
+    label.textContent = "Зараз";
+
+    status.textContent =
+      currentLesson.name;
+
+    timer.textContent =
+      "До кінця: " +
+      formatTimer(
+        currentLesson.endTime - currentNow
+      );
+
+  }
+
+  else if (nextLesson) {
+
+    label.textContent =
+      "Наступна пара";
+
+    status.textContent =
+      nextLesson.name;
+
+    timer.textContent =
+      "Через " +
+      formatTimer(
+        nextLesson.startTime - currentNow
+      );
+
+  }
+
+  else {
+
+    label.textContent = "Статус";
+
+    status.textContent =
+      "Пари закінчились";
+
+    timer.textContent = "";
+  }
+}
+
+
+function renderSchedule() {
+
+  const dayName =
+    days[selectedDayIndex];
+
+  const tomorrow =
+    selectedDayIndex ===
+      ((realDayIndex + 1) % 7) &&
+    now.getHours() >= 19;
+
+  document.getElementById(
+    "day-display"
+  ).innerHTML =
+    `${dayName}${tomorrow ? "<small>завтра</small>" : ""}`;
+
+
+  const container =
+    document.getElementById(
+      "schedule-list"
+    );
+
+  container.innerHTML = "";
+
+
+  const lessons =
+    scheduleData[selectedDayIndex] || [];
+
+
+  if (!lessons.length) {
+
+    container.innerHTML =
+      `<div class="empty">Пар немає</div>`;
+
+    return;
+  }
+
+
+  const currentNow =
+    new Date();
+
+  const todayIndex =
+    currentNow.getDay() === 0
+      ? 6
+      : currentNow.getDay() - 1;
+
+
+  lessons.forEach(lesson => {
+
+    const [startStr, endStr] =
+      lesson.time.replace("–", "-").split("-");
+
+    const start =
+      parseTime(startStr);
+
+    const end =
+      parseTime(endStr);
+
+
+    const active =
+      selectedDayIndex === todayIndex &&
+      currentNow >= start &&
+      currentNow <= end;
+
+
+    const item =
+      document.createElement("div");
+
+    item.className =
+      "lesson" +
+      (active ? " active" : "");
+
+
+    item.innerHTML = `
+      <div class="time">
+        ${lesson.time}
+      </div>
+
+      <div class="lesson-info">
+        <div class="lesson-name">
+          ${lesson.name}
+        </div>
+      </div>
+    `;
+
+
+    container.appendChild(item);
+
+  });
+}
+
+
+function changeDay(direction) {
+
+  selectedDayIndex =
+    (selectedDayIndex + direction + 7) % 7;
+
+  renderSchedule();
+}
+
+
+setInterval(updateLiveStatus, 1000);
+
+updateLiveStatus();
+renderSchedule();
+
+</script>
+
+</body>
+  </html>
