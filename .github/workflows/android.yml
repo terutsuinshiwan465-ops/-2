@@ -29,10 +29,13 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Initialize App & Build APK
+      - name: Prepare Web Directory
         run: |
-          mkdir public
-          cp index.html public/
+          mkdir -p public
+          cp index.html public/index.html
+
+      - name: Build Android APK
+        run: |
           npm init -y
           npm install @capacitor/core @capacitor/cli @capacitor/android
           npx cap init "Розклад" "com.schedule.app" --web-dir public
@@ -47,17 +50,3 @@ jobs:
         with:
           name: Schedule-MIUI-14.apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
-
-      - name: Add Android platform
-        working-directory: schedule_app
-        run: cordova platform add android@14.0.1
-
-      - name: Build APK
-        working-directory: schedule_app
-        run: cordova build android --debug
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: Schedule-App-APK
-          path: schedule_app/platforms/android/app/build/outputs/apk/debug/app-debug.apk
