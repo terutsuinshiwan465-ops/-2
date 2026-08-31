@@ -1,0 +1,50 @@
+name: Build Android APK
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: "zulu"
+          java-version: "17"
+
+      - name: Install Cordova
+        run: npm install -g cordova
+
+      - name: Create Cordova project
+        run: |
+          cordova create schedule_app com.myschedule.app ScheduleApp
+          rm -rf schedule_app/www/*
+          cp index.html schedule_app/www/index.html
+
+      - name: Add Android platform
+        working-directory: schedule_app
+        run: cordova platform add android@14.0.1
+
+      - name: Build APK
+        working-directory: schedule_app
+        run: cordova build android --debug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Schedule-App-APK
+          path: schedule_app/platforms/android/app/build/outputs/apk/debug/app-debug.apk
