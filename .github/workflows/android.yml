@@ -11,6 +11,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    env:
+      JAVA_TOOL_OPTIONS: "-Dfile.encoding=UTF-8"
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -34,6 +37,29 @@ jobs:
           mkdir -p public
           cp index.html public/index.html
 
+      - name: Build Android APK
+        run: |
+          # Автоматичне підтвердження ліцензій SDK
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+          
+          # Фіксація стабільних версій Capacitor
+          npm init -y
+          npm install @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6
+          
+          # Ініціалізація та збірка
+          npx cap init "Розклад" "com.schedule.app" --web-dir public
+          npx cap add android
+          npx cap sync android
+          
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon -Dorg.gradle.jvmargs="-Xmx2048m"
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Schedule-MIUI-14.apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
       - name: Build Android APK
         run: |
           npm init -y
