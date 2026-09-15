@@ -31,6 +31,8 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v4
+        with:
+          packages: 'platform-tools'
 
       - name: Prepare Web Directory
         run: |
@@ -39,7 +41,6 @@ jobs:
 
       - name: Build Android APK
         run: |
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
           npm init -y
           npm install @capacitor/core@8 @capacitor/cli@8 @capacitor/android@8
           npx cap init "Розклад" "com.schedule.app" --web-dir public
