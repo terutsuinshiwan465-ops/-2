@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-      contents: write  # Дозвіл на створення Releases
+      contents: write
 
     env:
       JAVA_TOOL_OPTIONS: "-Dfile.encoding=UTF-8"
@@ -35,6 +35,34 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v4
         with:
+          accept-android-sdk-licenses: true
+          cmdline-tools-version: 11.0
+
+      - name: Prepare Web Directory
+        run: |
+          mkdir -p public
+          cp index.html public/index.html
+
+      - name: Install Dependencies & Setup Capacitor
+        run: |
+          npm init -y
+          npm install @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6
+          npx cap init "Розклад" "com.schedule.app" --web-dir public
+          npx cap add android
+          npx cap sync android
+
+      - name: Build Android APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleRelease
+          cd ..
+
+      - name: Upload APK to Release
+        run: |
+          gh release create "v$(date +%Y.%m.%d)" android/app/build/outputs/apk/release/*.apk --generate-notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}        with:
           accept-android-sdk-licenses: true
           cmdline-tools-version: 11.0
 
