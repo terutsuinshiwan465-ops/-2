@@ -36,6 +36,23 @@ jobs:
         uses: android-actions/setup-android@v4
         with:
           accept-android-sdk-licenses: true
+          cmdline-tools-version: 11.0
+
+      - name: Prepare Web Directory
+        run: |
+          mkdir -p public
+          cp index.html public/index.html
+
+      - name: Build Android APK
+        run: |
+          npm init -y
+          npm install @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6
+          npx cap init "Розклад" "com.schedule.app" --web-dir public
+          rm -rf android
+          npx cap add android
+          npx cap sync android
+        with:
+          accept-android-sdk-licenses: true
 
       - name: Prepare Web Directory
         run: |
